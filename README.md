@@ -24,7 +24,7 @@
 - 🎯 **Visual Consistency**: Achieves **+15.3% improvement** in visual consistency (CLIP-I) compared to baseline text-only generation
 - ⚡ **Efficient Generation**: Leverages SDXL-Turbo for fast inference (~30x faster than standard SDXL)
 - 🔄 **Memory Injection**: Uses IP-Adapter to inject visual memory from reference frames, ensuring character and style consistency
-- 📊 **Comprehensive Evaluation**: Validated on VinaBench dataset with 834 test scenarios
+- 📊 **Comprehensive Evaluation**: Validated on VinaBench (VWP subset) with quantitative metrics
 
 ---
 
@@ -37,7 +37,7 @@ Traditional text-to-image generation models struggle with maintaining visual con
 - **Context loss**: No memory of previous frames
 
 <div align="center">
-  <img src="assests/problem_visulized.png" alt="Problem Visualization" width="800"/>
+  <img src="assets/problem_visulized.png" alt="Problem Visualization" width="800"/>
   <p><em>Visualization of the consistency problem in storyboard generation</em></p>
 </div>
 
@@ -48,7 +48,7 @@ Traditional text-to-image generation models struggle with maintaining visual con
 Our approach uses **IP-Adapter** to inject visual memory from the first generated frame into subsequent frames, ensuring consistency while maintaining narrative accuracy.
 
 <div align="center">
-  <img src="assests/system_arch.png" alt="System Architecture" width="900"/>
+  <img src="assets/system_arch1.png" alt="System Architecture" width="900"/>
   <p><em>System architecture: IP-Adapter enables visual memory injection for consistent storyboard generation</em></p>
 </div>
 
@@ -63,30 +63,20 @@ Our approach uses **IP-Adapter** to inject visual memory from the first generate
 
 ## 📊 Results
 
-### Quantitative Evaluation
+### Quantitative Evaluation on VinaBench (VWP Subset)
 
-We evaluate our method using two key metrics:
+We evaluate our method on the VWP subset of VinaBench dataset using two key metrics: Visual Consistency (CLIP-I) and Text Alignment (CLIP-T). Evaluation was performed on 10 randomly sampled stories from the test set (834 total scenarios available).
 
-#### Visual Consistency (CLIP-I)
-Measures the similarity between consecutive frames using CLIP image embeddings.
-
-| Method | CLIP-I Score | Improvement |
-|--------|-------------|-------------|
-| **Baseline** (Text-only) | 0.6683 | - |
-| **Ours** (IP-Adapter) | **0.7706** | **+15.3%** |
-
-#### Text-Image Alignment (CLIP-T)
-Measures how well generated images match their text descriptions.
-
-| Method | CLIP-T Score |
-|--------|-------------|
-| **Baseline** (Text-only) | 0.2317 |
-| **Ours** (IP-Adapter) | **0.2414** |
+| Method | Visual Consistency (CLIP-I) ↑ | Text Alignment (CLIP-T) ↑ |
+|--------|-------------------------------|---------------------------|
+| **Baseline (SDXL)** | 0.6683 | 0.2317 |
+| **Ours (Auto-Regressive)** | **0.7706** | **0.2414** |
+| **Improvement** | **+15.3%** | **+4.2%** |
 
 ### Key Findings
 
 - ✅ **Significant improvement** in visual consistency (+15.3%)
-- ✅ **Competitive text alignment** while maintaining consistency
+- ✅ **Improved text alignment** (+4.2%) while maintaining consistency
 - ✅ **Efficient inference** with SDXL-Turbo (1-2 steps vs 30+ steps)
 
 ---
@@ -96,21 +86,21 @@ Measures how well generated images match their text descriptions.
 ### Example 1: Character Consistency
 
 <div align="center">
-  <img src="assests/example1.png" alt="Example 1" width="900"/>
+  <img src="assets/example1.png" alt="Example 1" width="900"/>
   <p><em>Maintaining character appearance across multiple frames</em></p>
 </div>
 
 ### Example 2: Narrative Progression
 
 <div align="center">
-  <img src="assests/example2.png" alt="Example 2" width="900"/>
+  <img src="assets/example2.png" alt="Example 2" width="900"/>
   <p><em>Following narrative progression while preserving visual style</em></p>
 </div>
 
 ### Example 3: Complex Scenes
 
 <div align="center">
-  <img src="assests/example3.png" alt="Example 3" width="900"/>
+  <img src="assets/example3.png" alt="Example 3" width="900"/>
   <p><em>Handling complex multi-character scenes with consistent styling</em></p>
 </div>
 
@@ -138,101 +128,53 @@ cd Story2Storyboard
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 pip install diffusers transformers accelerate peft
 pip install git+https://github.com/tencent-ailab/IP-Adapter.git
-pip install pillow matplotlib numpy tqdm
+pip install pillow matplotlib numpy tqdm huggingface_hub
 ```
 
-3. **Download the dataset** (optional, for evaluation)
-```python
-from huggingface_hub import snapshot_download
-
-local_dir = snapshot_download(
-    repo_id="Silin1590/VinaBench",
-    repo_type="dataset",
-    allow_patterns="*.zip",
-    local_dir="./VinaBench_Data"
-)
-```
+**Note**: The complete working implementation is provided in `Story2Storyboard.ipynb`. The notebook includes all necessary code for data preparation, model setup, generation, and evaluation.
 
 ---
 
 ## 💻 Usage
 
-### Basic Usage
+The complete implementation is provided in `Story2Storyboard.ipynb`. The notebook contains:
 
-```python
-import torch
-from diffusers import AutoPipelineForText2Image, EulerAncestralDiscreteScheduler
+1. **Data Preparation**: Download and preprocess VinaBench dataset (VWP subset)
+2. **Model Setup**: Initialize SDXL-Turbo and IP-Adapter
+3. **Generation Pipeline**: 
+   - Baseline method (text-only generation)
+   - Our method (auto-regressive with IP-Adapter)
+4. **Evaluation**: Calculate CLIP-I and CLIP-T metrics
+5. **Visualization**: Compare results with ground truth
 
-# Initialize pipeline
-MODEL_ID = "stabilityai/sdxl-turbo"
-pipe = AutoPipelineForText2Image.from_pretrained(
-    MODEL_ID,
-    torch_dtype=torch.float16,
-    variant="fp16"
-).to("cuda")
+### Key Implementation Details
 
-pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(
-    pipe.scheduler.config,
-    timestep_spacing="trailing"
-)
+The notebook implements the auto-regressive approach:
+- Generate the first frame using text-only prompt (baseline SDXL-Turbo)
+- Load IP-Adapter weights
+- Generate subsequent frames by injecting the reference frame as visual memory
+- Each frame follows its corresponding narrative line while maintaining visual consistency
 
-# Generate reference frame (Frame 1)
-narrative = [
-    "A character enters a room",
-    "They notice something unusual",
-    "They investigate the object",
-    "They make a discovery"
-]
-
-# Generate first frame
-ref_image = pipe(
-    prompt=f"cinematic shot, {narrative[0]}, photorealistic, 4k",
-    num_inference_steps=2,
-    guidance_scale=0.0
-).images[0]
-
-# Load IP-Adapter for consistency
-pipe.load_ip_adapter(
-    "h94/IP-Adapter",
-    subfolder="sdxl_models",
-    weight_name="ip-adapter_sdxl.bin"
-)
-pipe.set_ip_adapter_scale(0.5)
-
-# Generate consistent frames
-storyboard = [ref_image]
-for line in narrative[1:]:
-    frame = pipe(
-        prompt=f"cinematic shot, {line}, photorealistic, 4k",
-        ip_adapter_image=ref_image,
-        num_inference_steps=2,
-        guidance_scale=0.0
-    ).images[0]
-    storyboard.append(frame)
-```
-
-### Running the Full Pipeline
-
-See `Story2Storyboard.ipynb` for the complete implementation including:
-- Data preparation and preprocessing
-- Batch generation
-- Evaluation metrics calculation
-- Visualization tools
+**Note**: All code in this repository is provided as-is from the research notebook. For the exact working implementation, please refer to `Story2Storyboard.ipynb`.
 
 ---
 
 ## 📁 Dataset
 
-We evaluate on the **VinaBench** dataset, which includes:
+We evaluate on the **VWP (Visual Storytelling)** subset of the **VinaBench** dataset:
 
-- **StorySalon**: 1,678 stories with 23,008 images
-- **VWP (Visual Storytelling)**: 12,486 stories from movies
-- **Test Set**: 834 scenarios with 4,901 images
+- **VWP Test Set**: 834 scenarios with 4,901 images
+- **Evaluation**: 10 randomly sampled stories from the test set
+- **Source**: Movie scenes with narrative text and corresponding storyboard frames
 
 Each story includes:
-- Narrative text (script lines)
-- Corresponding ground truth images
+- Narrative text (script lines describing each frame)
+- Corresponding ground truth images (actual movie frames)
 - Character profiles for consistency validation
+
+The full VinaBench dataset also includes:
+- **StorySalon**: 1,678 stories with 23,008 images
+- **VWP Train Set**: 12,486 stories from movies
 
 **Dataset**: [VinaBench on Hugging Face](https://huggingface.co/datasets/Silin1590/VinaBench)
 
@@ -240,19 +182,20 @@ Each story includes:
 
 ## 🔬 Evaluation
 
-To reproduce the evaluation results:
+The evaluation process is implemented in `Story2Storyboard.ipynb` (Cells 22-24):
 
-```python
-# Run evaluation on test set
-python evaluate.py --test_json clean_test.json --output_dir evaluation_results
+1. **Batch Generation** (Cell 22): 
+   - Randomly samples 10 stories from the VWP test set
+   - Generates storyboards using both baseline and our method
+   - Saves results for metric calculation
 
-# Calculate metrics
-python calculate_metrics.py --results_dir evaluation_results
-```
+2. **Metrics Calculation**:
+   - **CLIP-I** (Cell 23): Visual consistency between consecutive frames using CLIP image embeddings
+   - **CLIP-T** (Cell 24): Text-image alignment for each frame using CLIP text-image similarity
 
-Metrics calculated:
-- **CLIP-I**: Visual consistency between consecutive frames
-- **CLIP-T**: Text-image alignment for each frame
+The evaluation results show our auto-regressive method achieves:
+- **+15.3% improvement** in visual consistency (CLIP-I: 0.6683 → 0.7706)
+- **+4.2% improvement** in text alignment (CLIP-T: 0.2317 → 0.2414)
 
 ---
 

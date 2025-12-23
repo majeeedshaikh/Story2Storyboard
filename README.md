@@ -9,7 +9,7 @@
 
 **Automatically generate visually consistent storyboards from text narratives using IP-Adapter and SDXL-Turbo**
 
-[Paper](#) • [Dataset](#dataset) • [Installation](#installation) • [Usage](#usage)
+[Paper](#) • [Quick Start](#-quick-start) • [Dataset](#-dataset) • [Reproducibility](#-reproducibility) • [Citation](#-citation)
 
 </div>
 
@@ -23,6 +23,8 @@
 
 - 🎯 **Visual Consistency**: Achieves **+15.3% improvement** in visual consistency (CLIP-I) compared to baseline text-only generation
 - ⚡ **Efficient Generation**: Leverages SDXL-Turbo for fast inference (~30x faster than standard SDXL)
+- 🔄 **Training-Free**: No model fine-tuning required - uses pre-trained SDXL-Turbo with IP-Adapter out-of-the-box
+- 💰 **Cost-Effective**: Works without expensive training infrastructure
 - 🔄 **Memory Injection**: Uses IP-Adapter to inject visual memory from reference frames, ensuring character and style consistency
 - 📊 **Comprehensive Evaluation**: Validated on VinaBench (VWP subset) with quantitative metrics
 
@@ -52,12 +54,23 @@ Our approach uses **IP-Adapter** to inject visual memory from the first generate
   <p><em>System architecture: IP-Adapter enables visual memory injection for consistent storyboard generation</em></p>
 </div>
 
-### Methodology
+### Methodology: Auto-Regressive Visual Prompting
 
-1. **Reference Frame Generation**: Generate the first frame using text-only prompt (baseline SDXL-Turbo)
-2. **Adapter Loading**: Load IP-Adapter weights to enable visual conditioning
-3. **Consistent Frame Generation**: Generate subsequent frames by injecting the reference frame as visual memory
-4. **Narrative Alignment**: Each frame follows its corresponding narrative line while maintaining visual consistency
+Our approach uses an **auto-regressive visual prompting** strategy:
+
+1. **Anchor Generation** (Frame 0):
+   - Generate first frame using text-only prompt (baseline SDXL-Turbo)
+   - This serves as the "visual anchor" for consistency
+
+2. **Visual Memory Injection** (Frames 1+):
+   - Load IP-Adapter to enable visual conditioning
+   - Inject the anchor frame as visual prompt for each subsequent frame
+   - Balance between narrative adherence and visual consistency via adapter scale (λ = 0.5)
+
+3. **Key Innovation**:
+   - **Training-free**: No fine-tuning required - uses pre-trained models
+   - **Identity preservation**: Maintains character appearance across frames
+   - **Style consistency**: Preserves visual style throughout sequence
 
 ---
 
@@ -106,6 +119,38 @@ We evaluate our method on the VWP subset of VinaBench dataset using two key metr
 
 ---
 
+## 🚀 Quick Start
+
+1. **Open Notebook**: Launch `Story2Storyboard.ipynb` in Google Colab or Jupyter
+2. **Install Dependencies**: Run the setup cells (automatically installs all packages)
+3. **Load Data**: 
+   - The repository includes `clean_test.json` and `test_images/` folder for reproducibility
+   - No additional downloads needed - everything is ready to use!
+4. **Run Generation**: Execute cells sequentially to generate storyboards
+5. **Evaluate**: Run evaluation cells to compute CLIP-I and CLIP-T metrics
+
+**Note**: For first-time setup, see [Installation](#-installation) section below.
+
+---
+
+## 💻 System Requirements
+
+### Hardware
+- **GPU**: NVIDIA GPU with 16GB+ VRAM (T4, V100, A100, or similar)
+- **RAM**: 16GB+ system memory
+- **Storage**: 20GB+ free space for models and data
+
+### Software
+- Python 3.8+
+- CUDA 11.8+ (for GPU acceleration)
+- PyTorch 2.0+
+
+### Inference Performance
+- **Speed**: ~2-3 seconds per frame (SDXL-Turbo with 2 steps)
+- **Batch Size**: 1 (sequential generation for consistency)
+
+---
+
 ## 🚀 Installation
 
 ### Prerequisites
@@ -131,6 +176,11 @@ pip install git+https://github.com/tencent-ailab/IP-Adapter.git
 pip install pillow matplotlib numpy tqdm huggingface_hub
 ```
 
+3. **Data is Ready!**
+   - The repository includes `clean_test.json` and `test_images/` folder
+   - No additional data downloads needed for evaluation
+   - Everything is ready to use!
+
 **Note**: The complete working implementation is provided in `Story2Storyboard.ipynb`. The notebook includes all necessary code for data preparation, model setup, generation, and evaluation.
 
 ---
@@ -139,7 +189,7 @@ pip install pillow matplotlib numpy tqdm huggingface_hub
 
 The complete implementation is provided in `Story2Storyboard.ipynb`. The notebook contains:
 
-1. **Data Preparation**: Download and preprocess VinaBench dataset (VWP subset)
+1. **Data Preparation**: Uses included `clean_test.json` and `test_images/` folder (no download needed!)
 2. **Model Setup**: Initialize SDXL-Turbo and IP-Adapter
 3. **Generation Pipeline**: 
    - Baseline method (text-only generation)
@@ -155,6 +205,16 @@ The notebook implements the auto-regressive approach:
 - Generate subsequent frames by injecting the reference frame as visual memory
 - Each frame follows its corresponding narrative line while maintaining visual consistency
 
+### Adjusting Consistency vs. Narrative Adherence
+
+You can control the balance between visual consistency and narrative diversity by adjusting the IP-Adapter scale:
+
+```python
+pipe.set_ip_adapter_scale(0.5)  # Default: balanced
+# Higher values (0.6-0.8) = more consistency, less narrative diversity
+# Lower values (0.3-0.5) = more narrative diversity, less consistency
+```
+
 **Note**: All code in this repository is provided as-is from the research notebook. For the exact working implementation, please refer to `Story2Storyboard.ipynb`.
 
 ---
@@ -167,10 +227,30 @@ We evaluate on the **VWP (Visual Storytelling)** subset of the **VinaBench** dat
 - **Evaluation**: 10 randomly sampled stories from the test set
 - **Source**: Movie scenes with narrative text and corresponding storyboard frames
 
+### Included Test Data
+
+For reproducibility, this repository includes:
+- **`clean_test.json`**: Curated test set with 834 stories (26MB)
+- **`test_images/`**: Corresponding ground truth images organized by story ID (73MB)
+
+**No additional downloads required!** The test data is ready to use for evaluation.
+
+### Data Curation
+
+The `clean_test.json` file contains a curated subset of the VWP test set:
+- **Total Available**: 834 stories with 4,901 images
+- **Curation Criteria**: 
+  - All images must be present and accessible
+  - Stories must have at least 3 frames for valid consistency testing
+  - Synchronized with local image paths for reproducibility
+- **Evaluation Subset**: 10 randomly sampled stories (as in paper)
+
 Each story includes:
 - Narrative text (script lines describing each frame)
 - Corresponding ground truth images (actual movie frames)
 - Character profiles for consistency validation
+
+### Full Dataset
 
 The full VinaBench dataset also includes:
 - **StorySalon**: 1,678 stories with 23,008 images
@@ -199,6 +279,68 @@ The evaluation results show our auto-regressive method achieves:
 
 ---
 
+## 🔬 Reproducibility
+
+To reproduce the exact results from the paper:
+
+1. **Use Included Test Set**: 
+   - `clean_test.json`: Curated test set with 834 stories (included in repo)
+   - `test_images/`: Corresponding ground truth images (included in repo)
+   - No additional downloads needed!
+
+2. **Set Random Seed**: 
+   ```python
+   import random
+   import numpy as np
+   import torch
+   
+   random.seed(42)
+   np.random.seed(42)
+   torch.manual_seed(42)
+   ```
+
+3. **Run Evaluation**: 
+   - Use `NUM_SAMPLES = 10` in Cell 22
+   - This will randomly sample 10 stories (same as paper evaluation)
+
+4. **Expected Results**:
+   - Baseline CLIP-I: ~0.6683
+   - Ours CLIP-I: ~0.7706
+   - Improvement: ~+15.3%
+   - Baseline CLIP-T: ~0.2317
+   - Ours CLIP-T: ~0.2414
+   - Improvement: ~+4.2%
+
+---
+
+## ⚠️ Limitations
+
+- **Evaluation Scale**: Results reported on 10 sampled stories (not full 834 test set)
+- **Domain**: Evaluated primarily on cinematic/movie narratives (VWP dataset)
+- **Consistency Trade-off**: Higher adapter scale improves consistency but may reduce narrative diversity
+- **Computational**: Requires GPU for reasonable inference time
+
+---
+
+## ❓ Frequently Asked Questions
+
+**Q: Do I need to train the model?**  
+A: No! This is training-free. We use pre-trained SDXL-Turbo with IP-Adapter.
+
+**Q: Can I use my own stories?**  
+A: Yes! Simply format your narrative as a list of strings and follow the notebook pipeline.
+
+**Q: How do I adjust consistency vs. narrative adherence?**  
+A: Modify `pipe.set_ip_adapter_scale()` - higher values (0.6-0.8) = more consistency, lower (0.3-0.5) = more narrative diversity.
+
+**Q: Why only 10 stories in evaluation?**  
+A: Computational constraints. The full test set (834 stories) is available in `clean_test.json` for larger-scale evaluation.
+
+**Q: Do I need to download the dataset?**  
+A: No! The test data (`clean_test.json` and `test_images/`) is included in this repository for reproducibility.
+
+---
+
 ## 📄 Citation
 
 If you find this work useful, please cite:
@@ -208,7 +350,8 @@ If you find this work useful, please cite:
   title={Story2Storyboard: Consistent Visual Narrative Generation via Auto-Regressive Visual Prompting},
   author={Majeed, Muhammad Abdul and Haq, Abdul Wasay Ul},
   booktitle={2025 International Conference on IT and Industrial Technologies (ICIT)},
-  year={2025}
+  year={2025},
+  url={https://github.com/majeeedshaikh/Story2Storyboard}
 }
 ```
 

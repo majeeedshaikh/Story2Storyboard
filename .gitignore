@@ -14,8 +14,13 @@ ENV/
 *.ipynb_checkpoints/
 
 # Data files (large datasets)
-test_images/
-*.zip
+# Note: test_images/ and clean_test.json are included for reproducibility
+# Allow test data files
+!test_images/
+!clean_test.json
+!test_images.zip
+
+# Ignore other data files
 *.tar.gz
 *.h5
 *.hdf5

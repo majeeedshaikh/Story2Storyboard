@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Data files (large datasets)
+test_images/
+*.zip
+*.tar.gz
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+# Model files
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Outputs
+outputs/
+results/
+evaluation_results/
+*.png
+*.jpg
+*.jpeg
+!assests/*.png
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+
+# Hugging Face cache
+.cache/
+huggingface/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+

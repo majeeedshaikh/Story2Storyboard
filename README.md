@@ -204,11 +204,11 @@ The evaluation results show our auto-regressive method achieves:
 If you find this work useful, please cite:
 
 ```bibtex
-@article{story2storyboard2024,
-  title={Story2Storyboard: Consistent Visual Storyboard Generation from Text Narratives},
-  author={Shaikh, Abdul Majeed},
-  journal={Under Review},
-  year={2024}
+@inproceedings{majeed2025story2storyboard,
+  title={Story2Storyboard: Consistent Visual Narrative Generation via Auto-Regressive Visual Prompting},
+  author={Majeed, Muhammad Abdul and Haq, Abdul Wasay Ul},
+  booktitle={2025 International Conference on IT and Industrial Technologies (ICIT)},
+  year={2025}
 }
 ```
 
